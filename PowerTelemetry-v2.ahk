@@ -1,7 +1,8 @@
-﻿#Requires AutoHotkey v2.0
+#Requires AutoHotkey v2.0
 #SingleInstance Force
 
-global DesignCap := 0, FullCap := 0
+global DesignCap := 0
+global FullCap := 0
 
 GetStaticHardwareInfo()
 
@@ -36,55 +37,46 @@ MyGui.Show("w300 h225")
 SetTimer(RefreshStats, 1000)
 return
 
-
 GetStaticHardwareInfo() {
     global DesignCap, FullCap
-    try {
-        wmiWMI := ComObjGet("winmgmts:\\.\root\wmi")
-        for item in wmiWMI.ExecQuery("SELECT DesignedCapacity FROM BatteryStaticData")
-            DesignCap := item.DesignedCapacity
-        for item in wmiWMI.ExecQuery("SELECT FullChargedCapacity FROM BatteryFullChargedCapacity")
-            FullCap := item.FullChargedCapacity
-    }
     
-    if (!DesignCap) {
-        try {
-            for item in ComObjGet("winmgmts:\\.\root\wmi").ExecQuery("SELECT DesignCapacity FROM BatteryStaticData")
+    try {
+        wmiWmi := ComObjGet("winmgmts:\\.\root\wmi")
+        for item in wmiWmi.ExecQuery("SELECT DesignedCapacity FROM BatteryStaticData")
+            DesignCap := item.DesignedCapacity
+        for item in wmiWmi.ExecQuery("SELECT FullChargedCapacity FROM BatteryFullChargedCapacity")
+            FullCap := item.FullChargedCapacity
+        
+        if (!DesignCap) {
+            for item in wmiWmi.ExecQuery("SELECT DesignCapacity FROM BatteryStaticData")
                 DesignCap := item.DesignCapacity
         }
-    }
-    if (!FullCap) {
-        try {
-            for item in ComObjGet("winmgmts:\\.\root\wmi").ExecQuery("SELECT FullCapacity FROM BatteryFullCapacity")
+        if (!FullCap) {
+            for item in wmiWmi.ExecQuery("SELECT FullCapacity FROM BatteryFullCapacity")
                 FullCap := item.FullCapacity
         }
     }
     
     if (!DesignCap || !FullCap) {
         try {
-            wmiCIM := ComObjGet("winmgmts:\\.\root\cimv2")
-            for item in wmiCIM.ExecQuery("SELECT DesignCapacity, FullChargeCapacity FROM Win32_Battery") {
+            wmiCim := ComObjGet("winmgmts:\\.\root\cimv2")
+            for item in wmiCim.ExecQuery("SELECT DesignCapacity, FullChargeCapacity FROM Win32_Battery") {
                 if (!DesignCap && item.DesignCapacity)
                     DesignCap := item.DesignCapacity
                 if (!FullCap && item.FullChargeCapacity)
                     FullCap := item.FullChargeCapacity
             }
-        }
-    }
-    
-    if (!DesignCap) {
-        try {
-            for item in ComObjGet("winmgmts:\\.\root\cimv2").ExecQuery("SELECT DesignCapacity FROM Win32_PortableBattery")
-                DesignCap := item.DesignCapacity
+            if (!DesignCap) {
+                for item in wmiCim.ExecQuery("SELECT DesignCapacity FROM Win32_PortableBattery")
+                    DesignCap := item.DesignCapacity
+            }
         }
     }
 }
 
-
 RefreshStats() {
     global DesignCap, FullCap
     
-    ; V2 Buffer replaces VarSetCapacity
     powerStatus := Buffer(12, 0)
     if !DllCall("GetSystemPowerStatus", "Ptr", powerStatus)
         return
@@ -105,13 +97,16 @@ RefreshStats() {
         return
     }
 
-    chargeRate := 0, dischargeRate := 0, voltage := 0, remCap := 0
-    isCharging := false, isDischarging := false
+    chargeRate := 0
+    dischargeRate := 0
+    voltage := 0
+    remCap := 0
+    isCharging := false
+    isDischarging := false
     
     try {
         wmi := ComObjGet("winmgmts:{impersonationLevel=impersonate}!\\.\root\wmi")
         for item in wmi.ExecQuery("SELECT * FROM BatteryStatus") {
-            ; Handle optional missing properties safely in v2
             try chargeRate := item.ChargeRate
             try dischargeRate := item.DischargeRate
             try voltage := item.Voltage
