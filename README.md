@@ -5,12 +5,11 @@ Open source AHK v2 script. This script displays basic telemetry including power 
 (THIS SCRIPT CAN ONLY RUN ON WINDOWS AS IT RELIES ON WINDOWS' ARCHITECTURE)
 
 Using the compiled .exe file (RECOMMENDED):
+    Download PowerTelemetry with the .exe extension and run it without AHK v2 installed.
 
-Download PowerTelemetry with the .exe extension and run it without AHK v2 installed.
 
 Using Autohotkey v2:
-
-To run this script natively from source, you must have AutoHotkey v2 installed on your system.
+    To run this script natively from source, you must have AutoHotkey v2 installed on your system.
 Download and install AHK v2 from [the Official AutoHotkey Website](https://www.autohotkey.com/)
 Then you can download the .ahk file and run it directly.
 
